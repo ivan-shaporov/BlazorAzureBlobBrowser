@@ -1,55 +1,75 @@
 ﻿@page "/"
-@inject HttpClient Http
+@using Azure.Storage.Blobs;
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using System.Linq;
+@using Microsoft.Extensions.Configuration
 
-<h1>Weather forecast</h1>
+@inject IConfiguration Configuration
+@inject IAccessTokenProvider TokenProvider
 
-<p>This component demonstrates fetching data from the server.</p>
+<h1>@Header</h1>
+<AuthorizeView>
+    <Authorized>
+        @if (Blobnames == null)
+        {
+            <p><em>@Message</em></p>
+        }
+        else
+        {
+            <table class="table">
+                <tbody>
+                    @foreach (var blobname in Blobnames)
+                    {
+                        <tr>
+                            <td>@blobname</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </Authorized>
+    <NotAuthorized>
+        Log in to view blobs.
+    </NotAuthorized>
+</AuthorizeView>
 
-@if (forecasts == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Temp. (C)</th>
-                <th>Temp. (F)</th>
-                <th>Summary</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var forecast in forecasts)
-            {
-                <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
-                    <td>@forecast.Summary</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
 
 @code {
-    private WeatherForecast[] forecasts;
+    private string Message = "Loading...";
+    private string Header = "";
+    private List<string> Blobnames;
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("sample-data/weather.json");
-    }
+        var user = (await authenticationStateTask).User;
 
-    public class WeatherForecast
-    {
-        public DateTime Date { get; set; }
+        if (user.Identity.IsAuthenticated)
+        {
+            try
+            {
+                var endpoint = new Uri($"https://{Configuration["StorageAccountName"]}.blob.core.windows.net");
+                var blobServiceClient = new BlobServiceClient(endpoint, new AccessTokenProviderTokenCredential(TokenProvider));
 
-        public int TemperatureC { get; set; }
+                var containerName = Configuration["ContainerName"];
 
-        public string Summary { get; set; }
+                Header = $"Blobs in {containerName}";
 
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+                var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+
+                var pages = await containerClient.GetBlobsAsync().AsPages().Select(p => p.Values.Select(v => v.Name).ToArray()).ToListAsync();
+
+                Blobnames = pages.SelectMany(x => x).ToList();
+            }
+            catch (AccessTokenNotAvailableException)
+            {
+                Message = "Access denied.";
+            }
+            catch (Exception x)
+            {
+                Message = x.Message;
+            }
+        }
     }
 }
