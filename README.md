@@ -1,6 +1,6 @@
 # Sample Blazor application with Azure Active Directory authorization
 
-This sample demonstartes how to configure AAD Authorization in a Blazor browser hosted application. Configured AAD then is used to access blobs in an Azure Storage Account. This approach doesn't require any secrets and opens possibilities for using it at the client side in a browser.
+This sample demonstrates how to configure AAD Authorization in a Blazor browser hosted application. Configured AAD then is used to access blobs in an Azure Storage Account. This approach doesn't require any secrets and opens possibilities for using it at the client side in a browser.
 
 AAD authorization in this sample is based on an AAD App Registration. You will need to create and configure the app, allow the app access to an Azure Storage Account and allow access to the account for your Azure user login.
 
@@ -28,7 +28,7 @@ AAD authorization in this sample is based on an AAD App Registration. You will n
     echo Authority: https://login.microsoftonline.com/$TenantId
     echo ClientId: $AppId
     ```
-1. Copy appsettings.json to appsettings.Development.json in the `wwwroot` directory and update Authority and ClientId getting the values from the output od the script above.
+1. Copy appsettings.json to appsettings.Development.json in the `wwwroot` directory and update Authority and ClientId getting the values from the output of the script above.
 1. Open Azure Portal and select your new App Registration in the Azure Active Directory > App Registrations blade.
 1. Switch to Authentication blade.
 1. Find `This app has implicit grant settings enabled. If you are using any of these URIs in a SPA with MSAL.js 2.0, you should migrate URIs.` and migrate the URI-s to SPA configuration.
@@ -38,7 +38,7 @@ Start the Blazor application and make sure that it is available at `https://loca
 
 **Note:** it may take couple of minutes before the permissions propagate.
 
-Click `Login` in the upper right corner. It should open Microsoft login popup window. Complete the login accepting the permissions request. The upper line should show your name registered with Microsft account. Blobs will not be available at this point and `Access denied` message will appear.
+Click `Login` in the upper right corner. It should open Microsoft login popup window. Complete the login accepting the permissions request. The upper line should show your name registered with Microsoft account. Blobs will not be available at this point and `Access denied` message will appear.
 
 ## Setup Azure Storage access
 
