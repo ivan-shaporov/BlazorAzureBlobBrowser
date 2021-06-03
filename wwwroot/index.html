@@ -19,6 +19,19 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
+
+    <!--workaround for environment specific app settings https://github.com/dotnet/aspnetcore/issues/25152#issuecomment-718698235-->
+    <script src="js/BlazorEnvironment.js"></script>
+    <script>
+        const originalFetch = fetch;
+        fetch = async (url, options) => {
+            const response = await originalFetch(url, options);
+            return url.endsWith('/blazor.boot.json')
+                ? new Response(await response.blob(), { headers: { 'blazor-environment': window.BlazorEnvironment } })
+                : response;
+        };
+    </script>
+
     <script src="_content/Microsoft.Authentication.WebAssembly.Msal/AuthenticationService.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
 </body>

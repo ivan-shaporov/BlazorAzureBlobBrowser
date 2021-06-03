@@ -1,31 +1,52 @@
 ﻿@page "/"
 @using Azure.Storage.Blobs;
+@using Azure.Storage.Sas;
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using System.Linq;
 @using Microsoft.Extensions.Configuration
+@using Azure;
+@using Azure.Storage.Blobs.Models;
+@using BlazorAzureBlobBrowser.AzureBlobStorage;
 
 @inject IConfiguration Configuration
 @inject IAccessTokenProvider TokenProvider
+@inject IJSRuntime JS
 
 <h1>@Header</h1>
 <AuthorizeView>
     <Authorized>
-        @if (Blobnames == null)
+        @if (Blobs == null)
         {
             <p><em>@Message</em></p>
         }
         else
         {
-            <table class="table">
-                <tbody>
-                    @foreach (var blobname in Blobnames)
+            string accountName = Configuration["StorageAccountName"];
+            var containerName = Configuration["ContainerName"];
+
+            foreach (var blob in Blobs.OrderByDescending(i => i.Properties.CreatedOn).Take(10))
+            {
+                var sasUrl = new Uri($"https://{accountName}.blob.core.windows.net/{containerName}/{blob.Name}?" + Sas);
+
+                <div>
+                    @if (blob.Name.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase))
                     {
-                        <tr>
-                            <td>@blobname</td>
-                        </tr>
+                        <img src="@sasUrl" /><br />
                     }
-                </tbody>
-            </table>
+                    else if (blob.Name.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <video width="640" height="480" controls preload="none">
+                            <source src="@sasUrl" type="video/mp4">
+                        </video><br />
+                    }
+                    else if (blob.Name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <iframe src="@sasUrl" /><br />
+
+                    }
+                    <div>@blob.Name</div>
+                </div><br />
+            }
         }
     </Authorized>
     <NotAuthorized>
@@ -37,7 +58,10 @@
 @code {
     private string Message = "Loading...";
     private string Header = "";
-    private List<string> Blobnames;
+    private string Sas = "";
+
+    private List<BlobItem> Blobs;
+
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; }
 
@@ -49,18 +73,19 @@
         {
             try
             {
-                var endpoint = new Uri($"https://{Configuration["StorageAccountName"]}.blob.core.windows.net");
-                var blobServiceClient = new BlobServiceClient(endpoint, new AccessTokenProviderTokenCredential(TokenProvider));
-
+                string accountName = Configuration["StorageAccountName"];
                 var containerName = Configuration["ContainerName"];
+                var endpoint = new Uri($"https://{accountName}.blob.core.windows.net");
 
-                Header = $"Blobs in {containerName}";
+                Header = $"Blobs in {accountName}/{containerName}";
+
+                var blobServiceClient = new BlobServiceClient(endpoint, new AccessTokenProviderTokenCredential(TokenProvider));
 
                 var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
 
-                var pages = await containerClient.GetBlobsAsync().AsPages().Select(p => p.Values.Select(v => v.Name).ToArray()).ToListAsync();
+                Blobs = await containerClient.GetBlobsAsync().AsAsyncEnumerable().ToListAsync();
 
-                Blobnames = pages.SelectMany(x => x).ToList();
+                Sas = await GetSas(blobServiceClient);
             }
             catch (AccessTokenNotAvailableException)
             {
@@ -71,5 +96,22 @@
                 Message = x.Message;
             }
         }
+    }
+
+    private async Task<string> GetSas(BlobServiceClient blobServiceClient)
+    {
+        string accountName = Configuration["StorageAccountName"];
+        var containerName = Configuration["ContainerName"];
+
+        var userDelegationKey = await blobServiceClient.GetUserDelegationKeyAsync(startsOn: null, expiresOn: DateTimeOffset.UtcNow.AddDays(1));
+
+        await using var sasBuilder = new BlobSasBuilderWasm(BlobSasPermissions.Read, userDelegationKey.Value.SignedExpiresOn, JS)
+        {
+            BlobContainerName = containerName,
+        };
+
+        string result = await sasBuilder.GetSas(userDelegationKey, accountName);
+
+        return result;
     }
 }

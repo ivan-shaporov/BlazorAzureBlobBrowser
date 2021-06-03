@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.4.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.8.4" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.6" PrivateAssets="all" />
@@ -12,5 +13,9 @@
     <PackageReference Include="System.Linq.Async" Version="5.0.0" />
     <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
   </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="if not exist &quot;$(ProjectDir)wwwroot\js&quot; mkdir $(ProjectDir)wwwroot\js &#xD;&#xA;echo window.BlazorEnvironment = '$(ConfigurationName)'; &gt; $(ProjectDir)wwwroot\js\BlazorEnvironment.js" />
+  </Target>
 
 </Project>
