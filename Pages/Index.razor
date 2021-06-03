@@ -15,11 +15,8 @@
 <h1>@Header</h1>
 <AuthorizeView>
     <Authorized>
-        @if (Blobs == null)
-        {
-            <p><em>@Message</em></p>
-        }
-        else
+        <p><em>@Message</em></p>
+        @if (Blobs != null)
         {
             string accountName = Configuration["StorageAccountName"];
             var containerName = Configuration["ContainerName"];
@@ -86,6 +83,8 @@
                 Blobs = await containerClient.GetBlobsAsync().AsAsyncEnumerable().ToListAsync();
 
                 Sas = await GetSas(blobServiceClient);
+
+                Message = "";
             }
             catch (AccessTokenNotAvailableException)
             {

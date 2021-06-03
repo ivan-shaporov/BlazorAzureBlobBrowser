@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /wwwroot/appsettings.*.json
 /.vscode
+/wwwroot/js/BlazorEnvironment.js
