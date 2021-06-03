@@ -12,10 +12,11 @@ Some Azure SDK-s like Azure Storage client libraries for .NET require Cryptograp
 
 Azure storage based static websites "as is" aren't compatible with AAD callbacks because the default Blazor framework is expected to handle dynamic `authentication/login-callback` URL. As a workaround a redirect html file [login-callback](./wwwroot/authentication/login-callback) is placed in the `authentication` folder.
 
+Redirect login mode configured in `builder.Services.AddMsalAuthentication` method call is not supported as shown below
 ``` c#
 options.ProviderOptions.LoginMode = "redirect";
 ```
-Is not supported with this approach and `popup` (default) mode should ne used.
+`popup` (default) mode should ne used instead.
 
 ### Environment specific appsettings.json
 
@@ -75,7 +76,6 @@ PermissionId=`az ad sp show --id $AzureStorageAppId --query oauth2Permissions[0]
 az ad app permission add --api $AzureStorageAppId --id $AppId --api-permissions $PermissionId=Scope
 az ad app permission grant --id $AppId --api $AzureStorageAppId --query resourceId
 az ad app permission admin-consent --id $AppId
-az storage cors add --methods GET HEAD OPTIONS POST --origins * --services b --account-name 
 ```
 
 ## Setup user access to the blobs.
@@ -88,9 +88,9 @@ ContainerName={replace with existing container in the storage account}
 
 StorageAccountId=`az storage account show -n $StorageAccountName --query id -o tsv`
 UserPrincipalName=`az ad signed-in-user show --query userPrincipalName -o tsv`
-az role assignment create --assignee $UserPrincipalName --role "Storage Blob Data Reader" --scope $StorageAccountId/blobServices/default/containers/$ContainerName --query id
 
-az role assignment create  --role "Storage Blob Data Contributor"  --assignee $UserPrincipalName --scope $StorageAccountId
+az role assignment create --assignee $UserPrincipalName --role "Storage Blob Data Reader" --scope $StorageAccountId/blobServices/default/containers/$ContainerName --query id
+az role assignment create  --role "Storage Blob Delegator"  --assignee $UserPrincipalName --scope $StorageAccountId --query id
 ```
 
 ## Setup Azure Storage Account CORS
@@ -101,16 +101,17 @@ To access storage from a browser enable CORS:
 az storage cors add --methods GET HEAD OPTIONS POST --origins '*' --allowed-headers '*' --exposed-headers '*' --services b --account-name $StorageAccountName --max-age 3600
 ```
 
-
 Update `appsettings.Debug.json` in the `wwwroot` directory setting storage account name and a container name in that storage account.
 
-Restart the application and login. The list of blobs in the configured container should show up on the web page. **Note:** it may take couple of minutes before the permissions propagate.
+Restart the application and login. The list of blobs in the configured container should show up on the web page. Blobs with names ending with .jpg will be shown as images, .mp4 blobs will be shown as videos, .txt blobs will be displayed with their content and all other types will be listed as blob names. **Note:** it may take couple of minutes before the permissions propagate.
 
 **Note:** Sometimes local build caches some files preventing the app from working if there were incompatible changes in the Azure. Deleting `bin` and `obj` directories will fix that particular issue.
 
 ## Deployment
 
 Create `appsettings.Release.json` from `appsettings.json` and update similar to `appsettings.Debug.json` with the release values.
+
+Build and deploy the project accordingly to your hosting platform.
 
 After deploying the Application go to the 
 Azure Portal > Azure Active Directory > App Registrations blade > Authentication blade > Single-page application section.
