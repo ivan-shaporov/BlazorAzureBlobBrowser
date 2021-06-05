@@ -22,6 +22,9 @@ namespace BlazorAzureBlobBrowser
             builder.Services.AddMsalAuthentication(options =>
             {
                 builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
+
+                // Enable to use redirect login web page instead of a pop-up.
+                // options.ProviderOptions.LoginMode = "redirect";
             });
 
             await builder.Build().RunAsync();

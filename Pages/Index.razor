@@ -1,4 +1,6 @@
 ﻿@page "/"
+@page "/authentication/login-callback"
+@page "/authentication/login-failed"
 @using Azure.Storage.Blobs;
 @using Azure.Storage.Sas;
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
@@ -11,6 +13,7 @@
 @inject IConfiguration Configuration
 @inject IAccessTokenProvider TokenProvider
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <h1>@Header</h1>
 <AuthorizeView>
@@ -94,6 +97,10 @@
             {
                 Message = x.Message;
             }
+        }
+        else if (new Uri(Navigation.Uri).LocalPath.StartsWith("/authentication"))
+        {
+            Navigation.NavigateTo($"/authentication/finalize");
         }
     }
 

@@ -10,13 +10,14 @@ Some Azure SDK-s like Azure Storage client libraries for .NET require Cryptograp
 
 ### Static website hosting in Azure Storage
 
-Azure storage based static websites "as is" aren't compatible with AAD callbacks because the default Blazor framework is expected to handle dynamic `authentication/login-callback` URL. As a workaround a redirect html file [login-callback](./wwwroot/authentication/login-callback) is placed in the `authentication` folder.
+Azure Storage Static websites "as is" aren't compatible with AAD callbacks because the default Blazor framework is expected to handle dynamic `authentication/login-callback` URL. As a workaround `index.razor` component is extended to handle two more routes:
 
-Redirect login mode configured in `builder.Services.AddMsalAuthentication` method call is not supported as shown below
-``` c#
-options.ProviderOptions.LoginMode = "redirect";
+``` razor
+@page "/authentication/login-callback"
+@page "/authentication/login-failed"
 ```
-`popup` (default) mode should ne used instead.
+
+redirecting those requests to yet another new added route - `/authentication/finalize` in the `Authentication.razor` component. Setting `Error document path` to be `index.html` enables the entire login loop.
 
 ### Environment specific appsettings.json
 
@@ -64,7 +65,7 @@ Start the Blazor application and make sure that it is available at `https://loca
 
 **Note:** it may take couple of minutes before the permissions propagate.
 
-Click `Login` in the upper right corner. It should open Microsoft login popup window. Complete the login accepting the permissions request. The upper line should show your name registered with Microsoft account. Blobs will not be available at this point and `Access denied` message will appear.
+Click `Login` in the upper right corner. It should open Microsoft login popup window. Complete the login accepting the permissions request. The upper line should show your name registered with the Microsoft account. Blobs will not be available at this point and `Access denied` message will appear.
 
 ## Setup Azure Storage access
 
@@ -111,11 +112,13 @@ Restart the application and login. The list of blobs in the configured container
 
 Create `appsettings.Release.json` from `appsettings.json` and update similar to `appsettings.Debug.json` with the release values.
 
-Build and deploy the project accordingly to your hosting platform.
+Build and deploy the project according to your hosting platform.
+
+If you are using Azure *Storage* Static website feature set both `Index document name` and `Error document path
+` to be `index.html`.
 
 After deploying the Application go to the 
-Azure Portal > Azure Active Directory > App Registrations blade > Authentication blade > Single-page application section.
-And add Redirect URI to the location corresponding to your deployment similar to existing local host setup.
+Azure Portal > Azure Active Directory > App Registrations blade > Authentication blade > Single-page application section and add Redirect URI to the location corresponding to your deployment similar to existing local host setup.
 
 For other topics, like compression optimizations see [Host and deploy ASP.NET Core Blazor WebAssembly](https://docs.microsoft.com/en-us/aspnet/core/blazor/host-and-deploy/webassembly?view=aspnetcore-5.0).
 
