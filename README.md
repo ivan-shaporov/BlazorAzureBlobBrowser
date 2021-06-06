@@ -17,7 +17,7 @@ Azure Storage Static websites "as is" aren't compatible with AAD callbacks becau
 @page "/authentication/login-failed"
 ```
 
-redirecting those requests to yet another new added route - `/authentication/finalize` in the `Authentication.razor` component. Setting `Error document path` to be `index.html` enables the entire login loop.
+redirecting those requests to yet another new added route - `/authentication/finalize/{action}` in the `Authentication.razor` component. Setting `Error document path` to be `index.html` enables the entire login loop.
 
 ### Environment specific appsettings.json
 

@@ -69,6 +69,8 @@
     {
         var user = (await authenticationStateTask).User;
 
+        var url = new Uri(Navigation.Uri);
+
         if (user.Identity.IsAuthenticated)
         {
             try
@@ -98,9 +100,9 @@
                 Message = x.Message;
             }
         }
-        else if (new Uri(Navigation.Uri).LocalPath.StartsWith("/authentication"))
+        else if (url.LocalPath.StartsWith("/authentication"))
         {
-            Navigation.NavigateTo($"/authentication/finalize");
+            Navigation.NavigateTo($"/authentication/finalize/{url.Segments.Last()}");
         }
     }
 

@@ -1,7 +1,7 @@
 ﻿@page "/authentication/{action}"
 @page "/authentication/finalize/{action}"
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
-<RemoteAuthenticatorView Action="@Action" />
+<RemoteAuthenticatorView Action="@(Action == "finalize" ? "login-callback" : Action)" />
 
 @code{
     [Parameter] public string Action { get; set; }
